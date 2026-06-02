@@ -2,12 +2,13 @@ import { useState } from 'react'
 import './App.css'
 import HomePage from './components/HomePage'
 import WeatherCard from './components/WeatherCard'
-import { getWeatherData } from './utils/weatherAPI'
+import { getWeatherData, getWeatherDataByCoords } from './utils/weatherAPI'
 import { motion, AnimatePresence } from 'framer-motion'
 
 function App() {
   const [weather, setWeather] = useState(null)
   const [forecast, setForecast] = useState(null)
+  const [hourlyForecast, setHourlyForecast] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -18,19 +19,58 @@ function App() {
     setError('')
     setWeather(null)
     setForecast(null)
+    setHourlyForecast(null)
 
     try {
       const data = await getWeatherData(searchCity)
       setWeather(data.current)
       setForecast(data.forecast)
+      setHourlyForecast(data.hourly)
     } catch (err) {
       setError(err.message || 'Failed to fetch weather data')
       setWeather(null)
       setForecast(null)
+      setHourlyForecast(null)
     } finally {
       setLoading(false)
     }
   }
+
+  const searchWeatherByCoords = async (latitude, longitude) => {
+    setLoading(true)
+    setError('')
+    setWeather(null)
+    setForecast(null)
+    setHourlyForecast(null)
+
+    try {
+      const data = await getWeatherDataByCoords(latitude, longitude)
+      setWeather(data.current)
+      setForecast(data.forecast)
+      setHourlyForecast(data.hourly)
+    } catch (err) {
+      setError(err.message || 'Failed to fetch weather data from your location')
+      setWeather(null)
+      setForecast(null)
+      setHourlyForecast(null)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getWeatherClass = (code) => {
+    if (code === undefined || code === null) return 'weather-default'
+    if (code === 0) return 'weather-clear'
+    if (code === 1 || code === 2) return 'weather-partly-cloudy'
+    if (code === 3 || code === 45 || code === 48) return 'weather-cloudy'
+    if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return 'weather-rainy'
+    if ([71, 73, 75, 77, 85, 86].includes(code)) return 'weather-snowy'
+    if ([95, 96, 99].includes(code)) return 'weather-stormy'
+    return 'weather-default'
+  }
+
+  const activeWeatherCode = weather?.current?.weathercode ?? null
+  const bgClass = getWeatherClass(activeWeatherCode)
 
   const pageVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -71,7 +111,17 @@ function App() {
   }
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${bgClass}`}>
+      {/* Visual floating atmospheric ambient overlays depending on the weather */}
+      {activeWeatherCode !== null && (
+        <div className="weather-ambient-overlay">
+          {bgClass === 'weather-rainy' && <div className="ambient-rain-layer"></div>}
+          {bgClass === 'weather-snowy' && <div className="ambient-snow-layer"></div>}
+          {bgClass === 'weather-stormy' && <div className="ambient-storm-layer"></div>}
+          {bgClass === 'weather-clear' && <div className="ambient-clear-layer"></div>}
+        </div>
+      )}
+      
       <div className="app-wrapper">
         <AnimatePresence mode="wait">
           {/* Show HomePage if no weather data */}
@@ -84,7 +134,11 @@ function App() {
               exit="exit"
             >
               <header className="app-header"></header>
-              <HomePage onSearch={searchWeather} loading={loading} />
+              <HomePage
+                onSearch={searchWeather}
+                onSearchCoords={searchWeatherByCoords}
+                loading={loading}
+              />
             </motion.div>
           )}
 
@@ -133,6 +187,7 @@ function App() {
                 onClick={() => {
                   setWeather(null)
                   setForecast(null)
+                  setHourlyForecast(null)
                   setError('')
                 }}
                 className="back-button"
@@ -143,7 +198,11 @@ function App() {
               >
                 ← New Search
               </motion.button>
-              <WeatherCard weather={weather} forecast={forecast} />
+              <WeatherCard
+                weather={weather}
+                forecast={forecast}
+                hourly={hourlyForecast}
+              />
             </motion.div>
           )}
         </AnimatePresence>

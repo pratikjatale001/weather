@@ -1,14 +1,21 @@
 :root {
-  --sky-blue: #87ceeb;
-  --sky-dark: #4da6d6;
-  --sky-light: #b0d9f0;
-  --accent-color: #ff6b6b;
-  --card-bg: rgba(255, 255, 255, 0.95);
-  --text-dark: #2c3e50;
-  --text-light: #7f8c8d;
-  --border-radius: 20px;
-  --shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
-  --shadow-hover: 0 20px 60px rgba(77, 166, 214, 0.4);
+  --font-primary: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  
+  /* High-end curated color palettes */
+  --text-dark: #1e293b;
+  --text-light: #64748b;
+  --text-white: #ffffff;
+  --text-glass: rgba(255, 255, 255, 0.7);
+  
+  /* Glassmorphism primitives */
+  --glass-bg: rgba(255, 255, 255, 0.45);
+  --glass-bg-hover: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.4);
+  --glass-border-hover: rgba(255, 255, 255, 0.6);
+  --glass-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  --glass-shadow-hover: 0 24px 60px rgba(15, 23, 42, 0.15);
+  --border-radius-lg: 24px;
+  --border-radius-md: 16px;
 }
 
 * {
@@ -18,24 +25,53 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  background: linear-gradient(180deg, #87ceeb 0%, #b0d9f0 100%);
+  font-family: var(--font-primary);
+  color: var(--text-dark);
   min-height: 100vh;
+  overflow-x: hidden;
+  background-color: #0f172a;
 }
 
+/* Master App Container with dynamic background gradients and cross-fades */
 .app-container {
   min-height: 100vh;
+  width: 100%;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 40px 20px 20px;
-  background: linear-gradient(180deg, #87ceeb 0%, #b0d9f0 100%);
-  color: var(--text-dark);
+  padding: 40px 20px 60px;
   position: relative;
   overflow: hidden;
-  perspective: 1000px;
+  transition: background 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Dynamic background gradients matching active weather */
+.app-container.weather-default {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+}
+
+.app-container.weather-clear {
+  background: linear-gradient(135deg, #0f54c9 0%, #3b82f6 50%, #93c5fd 100%);
+}
+
+.app-container.weather-partly-cloudy {
+  background: linear-gradient(135deg, #1e40af 0%, #3a7bd5 60%, #a5f3fc 100%);
+}
+
+.app-container.weather-cloudy {
+  background: linear-gradient(135deg, #334155 0%, #475569 50%, #94a3b8 100%);
+}
+
+.app-container.weather-rainy {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #0d9488 100%);
+}
+
+.app-container.weather-snowy {
+  background: linear-gradient(135deg, #1e293b 0%, #38bdf8 50%, #e0f2fe 100%);
+}
+
+.app-container.weather-stormy {
+  background: linear-gradient(135deg, #090d16 0%, #1e1b4b 50%, #311042 100%);
 }
 
 .app-container::before {
@@ -45,226 +81,143 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.3) 0%, transparent 70%);
+  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.15) 0%, transparent 80%);
   pointer-events: none;
+  z-index: 1;
 }
 
 .app-wrapper {
   width: 100%;
-  max-width: 900px;
+  max-width: 960px;
   position: relative;
-  z-index: 1;
+  z-index: 5;
 }
 
-.app-header {
-  text-align: left;
-  margin-bottom: 25px;
-  color: var(--text-dark);
-  animation: slideDown 0.5s ease-out;
+/* Back button premium styles */
+.back-button {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--text-white);
+  padding: 12px 28px;
+  border-radius: var(--border-radius-md);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(20px);
+  margin-bottom: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.back-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.15);
+  transform: translateX(-4px);
 }
 
-.app-header h1 {
-  font-size: 2rem;
-  font-weight: 800;
-  margin-bottom: 0;
-  color: var(--text-dark);
-  letter-spacing: -0.5px;
-}
-
-.subtitle {
-  font-size: 1.1rem;
-  color: rgba(255, 255, 255, 0.8);
-  font-weight: 300;
-  letter-spacing: 0.5px;
-}
-
-.error-message {
-  background-color: #ff6b6b;
-  color: white;
-  padding: 16px;
-  border-radius: var(--border-radius);
-  margin-bottom: 20px;
-  text-align: center;
-  font-weight: 500;
-  box-shadow: var(--shadow);
-}
-
-.welcome-message {
-  text-align: center;
-  padding: 100px 20px;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 1.4rem;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  animation: fadeInUp 0.8s ease-out;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
+/* Error message styling */
 .error-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
-  padding: 40px 20px;
+  gap: 24px;
+  padding: 80px 20px;
   text-align: center;
 }
 
 .error-message {
-  background: linear-gradient(135deg, rgba(255, 107, 107, 0.95) 0%, rgba(255, 150, 130, 0.85) 100%);
-  color: white;
-  padding: 20px 24px;
-  border-radius: 16px;
-  margin-bottom: 0;
-  text-align: center;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: var(--text-white);
+  padding: 24px 36px;
+  border-radius: var(--border-radius-md);
   font-weight: 600;
-  box-shadow: 0 12px 35px rgba(255, 107, 107, 0.3);
-  max-width: 500px;
-  letter-spacing: 0.3px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 1.1rem;
+  box-shadow: 0 12px 40px rgba(239, 68, 68, 0.15);
+  max-width: 540px;
+  backdrop-filter: blur(30px);
+  animation: shake 0.5s ease-in-out;
 }
 
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+/* Atmospheric Particle Animation Layers */
+.weather-ambient-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Rain animation */
+.ambient-rain-layer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg stroke='%23ffffff' stroke-width='1' opacity='0.15'%3E%3Cline x1='10' y1='0' x2='5' y2='40' /%3E%3Cline x1='40' y1='10' x2='35' y2='50' /%3E%3Cline x1='70' y1='0' x2='65' y2='40' /%3E%3C/g%3E%3C/svg%3E");
+  animation: fallRain 0.8s linear infinite;
+}
+
+@keyframes fallRain {
+  from { background-position: 0px 0px; }
+  to { background-position: -100px 800px; }
+}
+
+/* Snow animation */
+.ambient-snow-layer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Ccircle cx='10' cy='20' r='1.5' fill='%23ffffff' opacity='0.4'/%3E%3Ccircle cx='50' cy='10' r='2' fill='%23ffffff' opacity='0.5'/%3E%3Ccircle cx='80' cy='30' r='1.2' fill='%23ffffff' opacity='0.3'/%3E%3Ccircle cx='30' cy='70' r='1.8' fill='%23ffffff' opacity='0.4'/%3E%3Ccircle cx='70' cy='80' r='1.5' fill='%23ffffff' opacity='0.5'/%3E%3C/svg%3E");
+  animation: driftSnow 8s linear infinite;
+}
+
+@keyframes driftSnow {
+  from { background-position: 0px 0px; }
+  to { background-position: 50px 500px; }
+}
+
+/* Storm animation (occasional lightning flash) */
+.ambient-storm-layer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  animation: lightningStrike 6s ease-in-out infinite;
+}
+
+@keyframes lightningStrike {
+  0%, 94%, 98%, 100% { background: rgba(255, 255, 255, 0); }
+  95% { background: rgba(255, 255, 255, 0.08); }
+  97% { background: rgba(255, 255, 255, 0.12); }
+}
+
+/* Clear sky beam animation */
+.ambient-clear-layer {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 10% 10%, rgba(255, 235, 59, 0.04) 0%, transparent 60%);
+  animation: warmPulse 5s ease-in-out infinite alternate;
+}
+
+@keyframes warmPulse {
+  0% { opacity: 0.7; }
+  100% { opacity: 1; }
+}
+
+/* Smooth transition styles for Framer Motion elements */
 .results-container {
   width: 100%;
-  animation: fadeIn 0.4s ease-out;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.back-button {
-  background: rgba(255, 255, 255, 0.9);
-  border: 2px solid rgba(135, 206, 235, 0.3);
-  color: var(--text-dark);
-  padding: 12px 24px;
-  border-radius: 12px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  letter-spacing: 0.4px;
-  backdrop-filter: blur(10px);
-  margin-bottom: 20px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-}
-
-.back-button:hover {
-  background: rgba(255, 255, 255, 0.95);
-  border-color: #4da6d6;
-  transform: translateX(-4px);
-  box-shadow: 0 12px 30px rgba(77, 166, 214, 0.25);
-}
-
-.back-button:active {
-  transform: translateX(-2px);
-}
-
-/* Enhanced Animation Styles */
-@keyframes shimmer {
-  0% {
-    background-position: -1000px 0;
-  }
-  100% {
-    background-position: 1000px 0;
-  }
-}
-
-@keyframes glow {
-  0%, 100% {
-    box-shadow: 0 0 10px rgba(77, 166, 214, 0.5);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(77, 166, 214, 0.8);
-  }
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes pulse-glow {
-  0%, 100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.02);
-  }
-}
-
-/* Smooth page transitions */
-.app-wrapper > div {
-  will-change: opacity, transform;
-}
-
-/* Button hover enhancement */
-.home-search-button:active {
-  transform: scale(0.95);
-}
-
-/* Error container animation */
-.error-container {
-  animation: slideUp 0.5s ease-out;
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Results container smooth entry */
-.results-container {
-  animation: fadeInScale 0.6s ease-out;
-}
-
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
 }

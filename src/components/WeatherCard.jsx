@@ -1,41 +1,15 @@
 import '../styles/WeatherCard.css'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useSpring, animated } from 'react-spring'
+import WeatherIcon from './WeatherIcon'
+import { MapPin, Calendar, Clock, ChevronLeft, ChevronRight, Wind } from 'lucide-react'
 
-const weatherCodeMap = {
-  0: '☀️',
-  1: '🌤️',
-  2: '⛅',
-  3: '☁️',
-  45: '🌫️',
-  48: '🌫️',
-  51: '🌧️',
-  53: '🌧️',
-  55: '🌧️',
-  61: '🌧️',
-  63: '🌧️',
-  65: '🌧️',
-  71: '❄️',
-  73: '❄️',
-  75: '❄️',
-  77: '❄️',
-  80: '🌧️',
-  81: '🌧️',
-  82: '🌧️',
-  85: '❄️',
-  86: '❄️',
-  95: '⛈️',
-  96: '⛈️',
-  99: '⛈️',
-}
-
-function WeatherCard({ weather, forecast }) {
+function WeatherCard({ weather, forecast, hourly }) {
   const { location, current } = weather
-  const emoji = weatherCodeMap[current.weathercode] || '🌤️'
-
   const [dayName, setDayName] = useState('')
   const [isNight, setIsNight] = useState(false)
+  const hourlyScrollRef = useRef(null)
 
   useEffect(() => {
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -43,18 +17,18 @@ function WeatherCard({ weather, forecast }) {
 
     const hour = new Date().getHours()
     setIsNight(hour > 18 || hour < 6)
-  }, [])
+  }, [weather])
 
   const temp = Math.round(current.temperature)
   const feelsLike = Math.round(
-    current.apparent_temperature ?? current.temperature
+    current.apparentTemperature ?? current.apparent_temperature ?? current.temperature
   )
 
-  // React Spring animation for temperature
+  // React Spring animation for temperature count-up
   const tempAnimation = useSpring({
     from: { number: 0 },
     to: { number: temp },
-    config: { duration: 1500 },
+    config: { duration: 1200 },
   })
 
   const formatDate = (dateString) => {
@@ -64,77 +38,37 @@ function WeatherCard({ weather, forecast }) {
     return `${day} ${month}`
   }
 
-  // Framer Motion variants
+  const formatHourShort = (isoString) => {
+    try {
+      const date = new Date(isoString)
+      let hours = date.getHours()
+      const ampm = hours >= 12 ? 'PM' : 'AM'
+      hours = hours % 12
+      hours = hours ? hours : 12
+      return `${hours} ${ampm}`
+    } catch (e) {
+      return isoString
+    }
+  }
+
+  // Framer Motion animation definitions
   const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, scale: 0.95 },
     visible: {
       opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.6,
-        ease: 'easeOut',
-      },
-    },
-  }
-
-  const contentVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        delay: 0.2,
-        duration: 0.5,
-      },
-    },
-  }
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: (i) => ({
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: i * 0.1,
-        duration: 0.4,
-      },
-    }),
-  }
-
-  const emojiVariants = {
-    initial: { scale: 0, rotate: -180 },
-    animate: {
       scale: 1,
-      rotate: 0,
       transition: {
-        type: 'spring',
-        stiffness: 100,
-        damping: 15,
-        delay: 0.3,
+        duration: 0.8,
+        ease: [0.16, 1, 0.3, 1],
       },
-    },
-    hover: {
-      scale: 1.1,
-      transition: { duration: 0.3 },
     },
   }
 
-  const forecastVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: (i) => ({
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: i * 0.08,
-        duration: 0.4,
-        ease: 'easeOut',
-      },
-    }),
-  }
-
-  const forecastHover = {
-    scale: 1.05,
-    y: -8,
-    transition: { duration: 0.3 },
+  const scrollHourly = (direction) => {
+    if (hourlyScrollRef.current) {
+      const scrollAmount = direction === 'left' ? -300 : 300
+      hourlyScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+    }
   }
 
   return (
@@ -143,155 +77,259 @@ function WeatherCard({ weather, forecast }) {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      whileHover={{ boxShadow: '0 25px 70px rgba(77, 166, 214, 0.35)' }}
     >
-      {/* CURRENT WEATHER SECTION */}
-      <motion.div className="weather-card-content" variants={contentVariants}>
-        {/* LEFT */}
-        <motion.div className="weather-left" custom={0} variants={itemVariants}>
-          <motion.div className="location-header" whileHover={{ x: 5 }}>
-            📍 <span className="location-name">{location.name}</span>
-          </motion.div>
+      {/* 1. CURRENT BRIEF HERO SECTION */}
+      <div className="weather-card-content">
+        {/* Left Side: Location & Visual Info */}
+        <div className="weather-left">
+          <div className="location-header">
+            <MapPin className="pin-icon" size={18} />
+            <span className="location-name">{location.name}</span>
+            {location.country && <span className="location-country">, {location.country}</span>}
+          </div>
 
-          <motion.div
-            className="day-name"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-          >
-            {dayName}
-          </motion.div>
+          <div className="time-header">
+            <Calendar size={14} />
+            <span className="day-name">{dayName}</span>
+          </div>
 
-          <div className="weather-conditions">
-            {[
-              { icon: '💧', value: `${current.humidity ?? 'N/A'}%`, label: 'Humidity' },
-              { icon: '💨', value: `${current.windspeed} km/h`, label: 'Wind' },
-              { icon: '⊙', value: '1013 hPa', label: 'Pressure' },
-            ].map((condition, i) => (
+          <div className="weather-description-badge">
+            Current Conditions
+          </div>
+        </div>
+
+        {/* Center Side: Stunning Custom SVG Icon */}
+        <div className="weather-center">
+          <div className="hero-weather-icon">
+            <WeatherIcon code={current.weathercode} size={150} animated={true} />
+          </div>
+        </div>
+
+        {/* Right Side: Temperature and Apparent */}
+        <div className="weather-right">
+          <div className="temp-display">
+            <animated.span className="temp-value">
+              {tempAnimation.number.to((n) => Math.round(n) + '°')}
+            </animated.span>
+            <span className="temp-unit">C</span>
+          </div>
+          <div className="feels-like-display">
+            Feels like <span className="feels-temp">{feelsLike}°C</span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. 24-HOUR HOURLY SWIPE SLIDER */}
+      {hourly && hourly.length > 0 && (
+        <div className="hourly-forecast-section">
+          <div className="section-header">
+            <h3 className="section-title"><Clock size={16} /> 24-Hour Forecast</h3>
+            <div className="slider-nav-buttons">
+              <button className="slider-arrow" onClick={() => scrollHourly('left')}><ChevronLeft size={16} /></button>
+              <button className="slider-arrow" onClick={() => scrollHourly('right')}><ChevronRight size={16} /></button>
+            </div>
+          </div>
+
+          <div className="hourly-scroll-container" ref={hourlyScrollRef}>
+            {hourly.map((hourItem, idx) => (
               <motion.div
-                key={i}
-                className="condition-item"
-                custom={i + 1}
-                variants={itemVariants}
-                whileHover={{ x: 8, color: '#4da6d6' }}
+                key={idx}
+                className="hourly-forecast-card"
+                whileHover={{ y: -4, borderColor: 'rgba(255, 255, 255, 0.45)', boxShadow: '0 8px 24px rgba(77, 166, 214, 0.15)' }}
               >
-                {condition.icon} {condition.value}
+                <span className="hourly-time">{formatHourShort(hourItem.time)}</span>
+                <div className="hourly-icon-wrapper">
+                  <WeatherIcon code={hourItem.weathercode} size={36} animated={true} />
+                </div>
+                <span className="hourly-temp">{hourItem.temp}°</span>
               </motion.div>
             ))}
           </div>
-        </motion.div>
+        </div>
+      )}
 
-        {/* CENTER */}
-        <motion.div className="weather-center" variants={contentVariants}>
-          <motion.div className="weather-icon-3d" variants={emojiVariants} initial="initial" animate="animate" whileHover="hover">
-            <motion.span
-              className="main-emoji"
-              animate={{ y: [0, -20, 0] }}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              {emoji}
-            </motion.span>
-            <motion.span
-              className="secondary-emoji"
-              animate={{ x: [0, 10, 0], y: [0, -10, 0] }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              ☁️
-            </motion.span>
-          </motion.div>
-        </motion.div>
+      {/* 3. PREMIUM METRICS GRID DASHBOARD */}
+      <div className="dashboard-metrics-grid">
+        {/* Humidity radial visual card */}
+        <HumidityGauge value={current.humidity ?? 55} />
 
-        {/* RIGHT */}
-        <motion.div className="weather-right" custom={4} variants={itemVariants}>
-          <motion.div
-            className="temp-display"
-            whileHover={{ scale: 1.05, boxShadow: '0 15px 40px rgba(77, 166, 214, 0.3)' }}
-            transition={{ duration: 0.3 }}
-          >
-            <animated.span className="temp-value">
-              {tempAnimation.number.to((n) => Math.round(n) + '°C')}
-            </animated.span>
-          </motion.div>
-          <motion.div
-            className="feels-like-display"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8, duration: 0.5 }}
-            whileHover={{ color: '#4da6d6' }}
-          >
-            Feels like {feelsLike}°C
-          </motion.div>
-        </motion.div>
-      </motion.div>
+        {/* Wind card with responsive spinning turbine */}
+        <WindCard speed={current.windspeed ?? 12} />
 
-      {/* 5-DAY FORECAST SECTION */}
+        {/* Real vs Apparent Temperature Compare card */}
+        <ApparentCard real={temp} apparent={feelsLike} />
+
+        {/* Air Pressure gauge-fill card */}
+        <PressureCard value={current.pressure ?? 1013} />
+
+        {/* UV Index card */}
+        <UVIndexCard value={current.uvIndex ?? 3} />
+      </div>
+
+      {/* 4. 5-DAY FORECAST GRAPHIC CARDS */}
       {forecast && forecast.length > 0 && (
-        <motion.div
-          className="forecast-section"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.5 }}
-        >
-          <motion.h3
-            className="forecast-title"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
-            5-Day Forecast
-          </motion.h3>
+        <div className="forecast-section">
+          <h3 className="forecast-title"><Calendar size={18} /> 5-Day Outlook</h3>
           <div className="forecast-grid">
-            {forecast.map((day, index) => {
-              const dayEmoji = weatherCodeMap[day.weathercode] || '🌤️'
-              return (
-                <motion.div
-                  key={index}
-                  className="forecast-item"
-                  custom={index}
-                  variants={forecastVariants}
-                  initial="hidden"
-                  animate="visible"
-                  whileHover={forecastHover}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <motion.div
-                    className="forecast-date"
-                    whileHover={{ color: '#4da6d6' }}
-                  >
-                    {formatDate(day.date)}
-                  </motion.div>
-                  <motion.div
-                    className="forecast-emoji"
-                    animate={{ y: [0, -15, 0] }}
-                    transition={{ duration: 3, repeat: Infinity, delay: index * 0.1 }}
-                    whileHover={{ scale: 1.2 }}
-                  >
-                    {dayEmoji}
-                  </motion.div>
-                  <motion.div className="forecast-temp">
-                    <motion.span
-                      className="forecast-high"
-                      whileHover={{ fontSize: '1.1em' }}
-                    >
-                      {day.maxTemp}°
-                    </motion.span>
-                    <span className="forecast-low">{day.minTemp}°</span>
-                  </motion.div>
-                  <motion.div
-                    className="forecast-rain"
-                    whileHover={{ scale: 1.1 }}
-                  >
-                    💧 {day.rainChance}%
-                  </motion.div>
-                </motion.div>
-              )
-            })}
+            {forecast.map((day, index) => (
+              <motion.div
+                key={index}
+                className="forecast-item"
+                whileHover={{ y: -6, boxShadow: '0 12px 30px rgba(0, 0, 0, 0.15)' }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="forecast-date">{formatDate(day.date)}</div>
+                <div className="forecast-emoji">
+                  <WeatherIcon code={day.weathercode} size={42} animated={true} />
+                </div>
+                <div className="forecast-temp">
+                  <span className="forecast-high">{day.maxTemp}°</span>
+                  <span className="forecast-low">{day.minTemp}°</span>
+                </div>
+                <div className="forecast-rain">
+                  <span className="rain-chance-indicator" style={{ background: `linear-gradient(90deg, #4da6d6 ${day.rainChance}%, rgba(255,255,255,0.15) ${day.rainChance}%)` }}></span>
+                  💧 {day.rainChance}%
+                </div>
+              </motion.div>
+            ))}
           </div>
-        </motion.div>
+        </div>
       )}
     </motion.div>
   )
-        
+}
+
+/* Metric Dashboards Subcomponents */
+function HumidityGauge({ value }) {
+  const radius = 28
+  const circumference = 2 * Math.PI * radius
+  const strokeDashoffset = circumference - (value / 100) * circumference
+
+  return (
+    <div className="detail-card humidity-card">
+      <div className="card-label">Humidity</div>
+      <div className="gauge-container">
+        <svg width="74" height="74" className="radial-gauge">
+          <circle
+            cx="37"
+            cy="37"
+            r={radius}
+            className="gauge-bg"
+            stroke="rgba(255,255,255,0.12)"
+            strokeWidth="5.5"
+            fill="none"
+          />
+          <circle
+            cx="37"
+            cy="37"
+            r={radius}
+            className="gauge-progress"
+            stroke="url(#humidityGrad)"
+            strokeWidth="5.5"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            fill="none"
+          />
+          <defs>
+            <linearGradient id="humidityGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#4fc3f7" />
+              <stop offset="100%" stopColor="#66bb6a" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <span className="gauge-value">{value}%</span>
+      </div>
+      <div className="card-desc">The air is {value > 65 ? 'humid & heavy' : value < 30 ? 'exceptionally dry' : 'perfectly balanced'}.</div>
+    </div>
+  )
+}
+
+function WindCard({ speed }) {
+  return (
+    <div className="detail-card wind-card">
+      <div className="card-label"><Wind size={14} style={{ marginRight: 4, display: 'inline' }} /> Wind Speed</div>
+      <div className="wind-visual">
+        <div className="propeller-container">
+          <svg viewBox="0 0 24 24" className="propeller animate-spin-wind" style={{ animationDuration: `${Math.max(1.5, 30 / Math.max(speed, 1))}s` }}>
+            <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+            <path d="M12 12c0-3 1.2-5 0-5s-1.2 2 0 5z" fill="currentColor" />
+            <path d="M12 12c3 0 5 1.2 5 0s-2-1.2-5 0z" fill="currentColor" />
+            <path d="M12 12c0 3-1.2 5 0 5s1.2-2 0-5z" fill="currentColor" />
+            <path d="M12 12c-3 0-5-1.2-5 0s2 1.2 5 0z" fill="currentColor" />
+          </svg>
+        </div>
+        <div className="wind-metrics">
+          <span className="wind-value">{speed}</span>
+          <span className="wind-unit">km/h</span>
+        </div>
+      </div>
+      <div className="card-desc">{speed > 25 ? 'Strong gusts blowing' : speed > 12 ? 'Moderate fresh air' : 'Calm, gentle air'}.</div>
+    </div>
+  )
+}
+
+function ApparentCard({ real, apparent }) {
+  const diff = apparent - real
+  return (
+    <div className="detail-card apparent-card">
+      <div className="card-label">Apparent Temp</div>
+      <div className="apparent-comparison">
+        <span className="apparent-value">{apparent}°C</span>
+        <span className={`apparent-diff ${diff > 0 ? 'warmer' : diff < 0 ? 'cooler' : 'same'}`}>
+          {diff === 0 ? 'Same as real' : diff > 0 ? `+${diff}° warmer` : `${diff}° cooler`}
+        </span>
+      </div>
+      <div className="temp-comparison-bar">
+        <div className="progress-labels">
+          <span>Actual: {real}°C</span>
+          <span>Apparent: {apparent}°C</span>
+        </div>
+        <div className="progress-bar">
+          <div className="progress-fill" style={{ width: `${Math.min(Math.max(((apparent + 10) / 50) * 100, 10), 100)}%` }}></div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PressureCard({ value }) {
+  return (
+    <div className="detail-card pressure-card">
+      <div className="card-label">Barometer</div>
+      <div className="pressure-value-wrapper">
+        <span className="pressure-value">{value}</span>
+        <span className="pressure-unit">hPa</span>
+      </div>
+      <div className="pressure-gauge-bar">
+        <div className="pressure-gauge-fill" style={{ width: `${Math.min(Math.max((value - 960) / 80 * 100, 10), 100)}%` }}></div>
+      </div>
+      <div className="card-desc">{value > 1018 ? 'High pressure stability' : value < 1006 ? 'Stormy low pressure' : 'Balanced atmosphere'}.</div>
+    </div>
+  )
+}
+
+function UVIndexCard({ value }) {
+  const getUVLabel = (uv) => {
+    if (uv <= 2) return { text: 'Low', class: 'uv-low' }
+    if (uv <= 5) return { text: 'Mod', class: 'uv-mod' }
+    if (uv <= 7) return { text: 'High', class: 'uv-high' }
+    return { text: 'Very High', class: 'uv-vhigh' }
+  }
+  const uvInfo = getUVLabel(value)
+  return (
+    <div className="detail-card uv-card">
+      <div className="card-label">UV Index</div>
+      <div className="uv-value-wrapper">
+        <span className="uv-value">{value}</span>
+        <span className={`uv-badge ${uvInfo.class}`}>{uvInfo.text}</span>
+      </div>
+      <div className="uv-gauge-bar">
+        <div className="uv-gauge-fill" style={{ width: `${(value / 11) * 100}%` }}></div>
+      </div>
+      <div className="card-desc">{value > 5 ? 'Sunscreen is recommended' : 'Low risk of sun damage'}.</div>
+    </div>
+  )
 }
 
 export default WeatherCard
